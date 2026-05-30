@@ -4,6 +4,7 @@ import { MOCK_RESULTS, MOCK_QUADRANT_DATA } from '@/data/mockData';
 import { QuadrantChart } from '@/components/QuadrantChart';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { cn } from '@/lib/utils';
+import { MoleculeViewer } from '@/components/MoleculeViewer';
 import type { ResultRecord, Quadrant } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -212,6 +213,15 @@ const Results = () => {
                   const val = selectedRecord[key] as number;
                   return <MetricRow key={i} label={`f${i}`} value={val.toFixed(4)} />;
                 })}
+              </Section>
+              <Section title="3D Visualization">
+                  {/* Using some mock XYZ data since we don't have real files */}
+                  <div className="w-full h-64 border border-border rounded-lg overflow-hidden bg-black/50">
+                    <MoleculeViewer
+                      data={`3\nWater\nO 0.00000 0.00000 0.11779\nH 0.00000 0.75545 -0.47116\nH 0.00000 -0.75545 -0.47116`}
+                      format="xyz"
+                    />
+                  </div>
               </Section>
             </div>
           </div>
