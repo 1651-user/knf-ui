@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   return (
-    <div className="flex min-h-screen w-full bg-background bg-grid bg-gradient-radial">
+    <div className="flex min-h-screen w-full bg-background bg-grid bg-gradient-radial bg-gradient-subtle">
       {/* Sidebar */}
       <aside
         className={cn(
@@ -38,19 +38,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Nav */}
         <nav className="flex-1 py-4 px-2 space-y-1">
-          {navItems.map((item) => {
+          {navItems.map((item, i) => {
             const active = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
             return (
               <Link
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
                   active
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-primary/10 text-primary shadow-sm shadow-primary/5'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5'
                 )}
                 aria-current={active ? 'page' : undefined}
+                style={{ animationDelay: `${i * 0.05}s` }}
               >
                 <item.icon className="w-5 h-5 shrink-0" />
                 {!collapsed && <span>{item.label}</span>}

@@ -60,7 +60,7 @@ const RunManager = () => {
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl">
-      <header>
+      <header className="animate-fade-in-up">
         <h1 className="text-2xl font-display font-bold text-foreground">Run Manager</h1>
         <p className="text-sm text-muted-foreground mt-1">Configure and launch KNF descriptor computations</p>
       </header>

@@ -28,7 +28,7 @@ const iconVariantStyles = {
 
 export function StatsCard({ title, value, subtitle, icon: Icon, trend, variant = 'default' }: StatsCardProps) {
   return (
-    <div className={cn('rounded-xl border bg-card p-5 transition-all hover:border-primary/30', variantStyles[variant])}>
+    <div className={cn('rounded-xl border bg-card p-5 card-hover', variantStyles[variant])}>
       <div className="flex items-start justify-between">
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">{title}</p>

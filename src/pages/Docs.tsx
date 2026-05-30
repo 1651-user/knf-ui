@@ -1,7 +1,7 @@
 const DocsPage = () => {
   return (
     <div className="p-6 lg:p-8 max-w-3xl space-y-8">
-      <header>
+      <header className="animate-fade-in-up">
         <h1 className="text-2xl font-display font-bold text-foreground">Quick Help</h1>
         <p className="text-sm text-muted-foreground mt-1">Understanding KNF descriptors and analysis workflow</p>
       </header>

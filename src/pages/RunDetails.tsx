@@ -48,7 +48,7 @@ const RunDetails = () => {
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-7xl">
       {/* Header */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div className="flex items-start justify-between flex-wrap gap-4 animate-fade-in-up">
         <div>
           <Link to="/runs" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1 mb-2">
             <ArrowLeft className="w-3 h-3" /> Back to Runs

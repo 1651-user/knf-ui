@@ -63,7 +63,7 @@ const Results = () => {
 
   return (
     <div className="p-6 lg:p-8 space-y-6 max-w-[1600px]">
-      <header className="flex items-start justify-between flex-wrap gap-4">
+      <header className="flex items-start justify-between flex-wrap gap-4 animate-fade-in-up">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Results Library</h1>
           <p className="text-sm text-muted-foreground mt-1">{MOCK_RESULTS.length} records across all runs</p>

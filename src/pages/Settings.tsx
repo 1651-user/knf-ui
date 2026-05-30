@@ -25,7 +25,7 @@ const SettingsPage = () => {
 
   return (
     <div className="p-6 lg:p-8 max-w-2xl space-y-6">
-      <header>
+      <header className="animate-fade-in-up">
         <h1 className="text-2xl font-display font-bold text-foreground">Settings</h1>
         <p className="text-sm text-muted-foreground mt-1">Configure defaults and preferences</p>
       </header>
