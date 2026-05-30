@@ -51,8 +51,8 @@ const Results = () => {
   };
 
   const downloadCSV = () => {
-    const headers = ['fileName', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'SNCI', 'SCDI', 'SCDI_variance', 'SNCI_Norm', 'SCDI_Norm', 'quadrant'];
-    const rows = MOCK_RESULTS.map(r => headers.map(h => (r as any)[h]).join(','));
+    const headers = ['fileName', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'SNCI', 'SCDI', 'SCDI_variance', 'SNCI_Norm', 'SCDI_Norm', 'quadrant'] as const;
+    const rows = MOCK_RESULTS.map(r => headers.map(h => String(r[h as keyof ResultRecord])).join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -207,9 +207,11 @@ const Results = () => {
                 <MetricRow label="SCDI_variance" value={selectedRecord.SCDI_variance.toFixed(6)} />
               </Section>
               <Section title="KNF Descriptors">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(i => (
-                  <MetricRow key={i} label={`f${i}`} value={(selectedRecord as any)[`f${i}`].toFixed(4)} />
-                ))}
+                {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map(i => {
+                  const key = `f${i}` as keyof ResultRecord;
+                  const val = selectedRecord[key] as number;
+                  return <MetricRow key={i} label={`f${i}`} value={val.toFixed(4)} />;
+                })}
               </Section>
             </div>
           </div>

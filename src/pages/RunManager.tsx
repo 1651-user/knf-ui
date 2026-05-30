@@ -20,13 +20,7 @@ const RunManager = () => {
   const [isStarting, setIsStarting] = useState(false);
   const { toast } = useToast();
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const dropped = Array.from(e.dataTransfer.files);
-    addFiles(dropped);
-  }, [files]);
-
-  const addFiles = (incoming: File[]) => {
+  const addFiles = useCallback((incoming: File[]) => {
     const newFiles: MolecularFile[] = incoming.map((f, i) => {
       const ext = '.' + f.name.split('.').pop()?.toLowerCase();
       const valid = ACCEPTED_EXTENSIONS.includes(ext);
@@ -41,7 +35,13 @@ const RunManager = () => {
       };
     });
     setFiles(prev => [...prev, ...newFiles]);
-  };
+  }, [files]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const dropped = Array.from(e.dataTransfer.files);
+    addFiles(dropped);
+  }, [addFiles]);
 
   const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
 
@@ -169,7 +169,7 @@ const RunManager = () => {
                   ['rhoFloor', 'Rho Floor'],
                 ].map(([key, label]) => (
                   <FieldGroup key={key} label={label}>
-                    <input type="number" step="any" value={(config as any)[key] ?? ''} onChange={e => setConfig(c => ({ ...c, [key]: e.target.value ? +e.target.value : undefined }))} placeholder="Default" className="w-full rounded-lg bg-input border border-border px-3 py-2 text-sm text-foreground font-mono focus:ring-1 focus:ring-ring outline-none" />
+                    <input type="number" step="any" value={(config as unknown as Record<string, number>)[key] ?? ''} onChange={e => setConfig(c => ({ ...c, [key]: e.target.value ? +e.target.value : undefined }))} placeholder="Default" className="w-full rounded-lg bg-input border border-border px-3 py-2 text-sm text-foreground font-mono focus:ring-1 focus:ring-ring outline-none" />
                   </FieldGroup>
                 ))}
                 <FieldGroup label="NCI Device">
