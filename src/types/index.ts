@@ -86,6 +86,16 @@ export interface ResultRecord {
   f7: number;
   f8: number;
   f9: number;
+  f2_defined: boolean;
+  KUID_raw: string;
+  KUID: string;
+  KUID_Cluster: string;
+  KUID_Intensive_raw: string;
+  KUID_Intensive: string;
+  KUID_Intensive_Cluster: string;
+  KUID_prefix2: string;
+  KUID_prefix4: string;
+  KUID_prefix6: string;
   SNCI: number;
   SCDI: number;
   SCDI_variance: number;

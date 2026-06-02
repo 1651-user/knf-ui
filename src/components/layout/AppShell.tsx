@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Play, BarChart3, Settings, BookOpen, ChevronLeft, ChevronRight, Atom } from 'lucide-react';
+import { LayoutDashboard, Play, BarChart3, Settings, BookOpen, ChevronLeft, ChevronRight, Atom, CircleDot } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +7,7 @@ const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/runs', label: 'Run Manager', icon: Play },
   { to: '/results', label: 'Results', icon: BarChart3 },
+  { to: '/explorer', label: 'Explorer', icon: CircleDot },
   { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/docs', label: 'Help', icon: BookOpen },
 ];

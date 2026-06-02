@@ -28,6 +28,8 @@ const moleculeNames = [
 const statuses: JobStatus[] = ['success', 'success', 'success', 'success', 'success',
   'success', 'success', 'failed', 'stopped', 'success'];
 
+const kuidClusters = ['A1', 'B2', 'C3', 'D4', 'E5'];
+
 function generateResults(runId: string): ResultRecord[] {
   return moleculeNames.map((name, i) => {
     const ext = extensions[i % extensions.length];
@@ -46,11 +48,26 @@ function generateResults(runId: string): ResultRecord[] {
     const SCDI_variance = +rand(0.01, 4.5).toFixed(4);
     const SNCI_Norm = +rand(0.02, 0.98).toFixed(4);
     const SCDI_Norm = +rand(0.02, 0.98).toFixed(4);
+    const f2_defined = f2 > 1.0;
+    const kuidBase = `KUID-${String(i + 1).padStart(4, '0')}-${name.substring(0, 4).toUpperCase()}`;
+    const KUID_raw = `${kuidBase}-raw`;
+    const KUID = kuidBase;
+    const KUID_Cluster = kuidClusters[i % kuidClusters.length];
+    const KUID_Intensive_raw = `${KUID_raw}-int`;
+    const KUID_Intensive = `${KUID}-int`;
+    const KUID_Intensive_Cluster = kuidClusters[(i + 2) % kuidClusters.length];
+    const KUID_prefix2 = KUID.substring(0, 2);
+    const KUID_prefix4 = KUID.substring(0, 4);
+    const KUID_prefix6 = KUID.substring(0, 6);
     return {
       id: `res-${runId}-${i}`,
       runId,
       fileName: `${name}${ext}`,
       f1, f2, f3, f4, f5, f6, f7, f8, f9,
+      f2_defined,
+      KUID_raw, KUID, KUID_Cluster,
+      KUID_Intensive_raw, KUID_Intensive, KUID_Intensive_Cluster,
+      KUID_prefix2, KUID_prefix4, KUID_prefix6,
       SNCI, SCDI, SCDI_variance,
       SNCI_Norm, SCDI_Norm,
       quadrant: 'Q1' as Quadrant, // assigned below

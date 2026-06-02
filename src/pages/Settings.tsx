@@ -4,7 +4,7 @@ import type { AppSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 const defaultSettings: AppSettings = {
-  apiBaseUrl: 'http://localhost:8000',
+  apiBaseUrl: 'http://localhost:8765',
   defaultProcessingMode: 'auto',
   defaultBackend: 'torch',
   defaultWorkers: 4,

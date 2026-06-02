@@ -8,6 +8,7 @@ import Dashboard from "./pages/Index";
 import RunManager from "./pages/RunManager";
 import RunDetails from "./pages/RunDetails";
 import Results from "./pages/Results";
+import Explorer from "./pages/Explorer";
 import SettingsPage from "./pages/Settings";
 import DocsPage from "./pages/Docs";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/runs" element={<RunManager />} />
             <Route path="/runs/:runId" element={<RunDetails />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/explorer" element={<Explorer />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="*" element={<NotFound />} />

@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Upload, X, FileText, ChevronDown, ChevronUp, Play, Save, FolderOpen } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Upload, X, FileText, ChevronDown, ChevronUp, Play, Save, FolderOpen, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { MolecularFile, RunConfig } from '@/types';
+import type { MolecularFile, RunConfig, AppSettings } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useForm, FormProvider, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,20 +42,27 @@ const defaultConfig: ConfigSchemaType = {
 
 const STORAGE_KEY = 'knf-run-config';
 
+function loadInitialConfig(): ConfigSchemaType {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return defaultConfig;
+    return { ...defaultConfig, ...JSON.parse(saved) };
+  } catch {
+    return defaultConfig;
+  }
+}
+
 const RunManager = () => {
   const [files, setFiles] = useState<MolecularFile[]>([]);
   const { toast } = useToast();
 
   const methods = useForm<ConfigSchemaType>({
     resolver: zodResolver(configSchema),
-    defaultValues: () => {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : defaultConfig;
-    },
+    defaultValues: loadInitialConfig(),
     mode: 'onChange'
   });
 
-  const { watch, control, handleSubmit, formState: { errors, isValid } } = methods;
+  const { watch, control, handleSubmit, setValue, formState: { errors, isValid } } = methods;
   const config = watch();
 
   useEffect(() => {
@@ -65,23 +72,45 @@ const RunManager = () => {
   const [isStarting, setIsStarting] = useState(false);
 
   // Hook up the websocket (simulated backend URL)
-  const { isConnected, messages, connect, disconnect, sendMessage } = useWebSocket('ws://localhost:8000/ws/run');
+  const [uploading, setUploading] = useState(false);
+  const [wsLogs, setWsLogs] = useState<string[]>([]);
+  const apiUrlRef = useRef('http://localhost:8765');
 
-  // Handle incoming websocket messages to simulated stopping the run
-  useEffect(() => {
-    if (messages.length > 0) {
-       const lastMessage = messages[messages.length - 1];
-       if (lastMessage && lastMessage.status === 'completed') {
-           setIsStarting(false);
-           toast({ title: 'Run Completed', description: 'All files processed successfully.' });
-           disconnect();
-       } else if (lastMessage && lastMessage.status === 'error') {
-           setIsStarting(false);
-           toast({ title: 'Run Failed', description: lastMessage.error || 'Unknown error occurred.', variant: 'destructive' });
-           disconnect();
-       }
+  const [wsUrl, setWsUrl] = useState(() => {
+    try {
+      const saved = localStorage.getItem('knf-settings');
+      if (saved) {
+        const settings: AppSettings = JSON.parse(saved);
+        const base = settings.apiBaseUrl.replace(/\/+$/, '');
+        apiUrlRef.current = base;
+        return base.replace(/^http/, 'ws') + '/ws/run';
+      }
+    } catch { /* ignore */ }
+    return 'ws://127.0.0.1:8765/ws/run';
+  });
+
+  const { isConnected, messages, connect, disconnect, sendMessage } = useWebSocket(wsUrl);
+
+  const uploadFilesToBackend = useCallback(async (filesToUpload: File[]): Promise<boolean> => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      filesToUpload.forEach(f => formData.append('files', f));
+      const res = await fetch(`${apiUrlRef.current}/api/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
+      const result = await res.json();
+      toast({ title: 'Files Uploaded', description: `${result.files.length} file(s) sent to backend.` });
+      return true;
+    } catch (err: any) {
+      toast({ title: 'Upload Failed', description: err.message, variant: 'destructive' });
+      return false;
+    } finally {
+      setUploading(false);
     }
-  }, [messages, disconnect, toast]);
+  }, [toast]);
 
   const addFiles = useCallback((incoming: File[]) => {
     const newFiles: MolecularFile[] = incoming.map((f, i) => {
@@ -98,7 +127,12 @@ const RunManager = () => {
       };
     });
     setFiles(prev => [...prev, ...newFiles]);
-  }, [files]);
+    // Upload to backend
+    const validFiles = incoming.filter((_, i) => newFiles[i].valid);
+    if (validFiles.length > 0) {
+      uploadFilesToBackend(validFiles);
+    }
+  }, [files, uploadFilesToBackend]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -108,29 +142,47 @@ const RunManager = () => {
 
   const removeFile = (id: string) => setFiles(prev => prev.filter(f => f.id !== id));
 
-  const handleStart = (data: ConfigSchemaType) => {
-    if (files.filter(f => f.valid).length === 0) return;
+  // Handle incoming websocket messages
+  useEffect(() => {
+    if (messages.length > 0) {
+       const lastMessage = messages[messages.length - 1];
+       if (lastMessage.type === 'completed' || lastMessage.status === 'completed') {
+           setIsStarting(false);
+           toast({ title: 'Run Completed', description: lastMessage.message || 'All files processed successfully.' });
+           disconnect();
+       } else if (lastMessage.type === 'error' || lastMessage.status === 'error') {
+           setIsStarting(false);
+           toast({ title: 'Run Failed', description: lastMessage.message || lastMessage.error || 'Unknown error.', variant: 'destructive' });
+           disconnect();
+       } else if (lastMessage.type === 'log') {
+           setWsLogs(prev => [...prev, lastMessage.message].slice(-50));
+       } else if (lastMessage.type === 'command') {
+           setWsLogs(prev => [...prev, `> ${lastMessage.message}`].slice(-50));
+       } else if (lastMessage.type === 'status') {
+           toast({ title: 'Status', description: lastMessage.message });
+       } else if (lastMessage.type === 'results') {
+           const fileList = lastMessage.files?.join(', ') || '';
+           setWsLogs(prev => [...prev, `Results: ${fileList}`].slice(-50));
+       }
+    }
+  }, [messages, disconnect, toast]);
+
+  const handleStart = async (data: ConfigSchemaType) => {
+    const validFiles = files.filter(f => f.valid);
+    if (validFiles.length === 0) return;
+
     setIsStarting(true);
-    toast({ title: 'Run Started', description: `Connecting to backend to process ${files.filter(f => f.valid).length} files...` });
+    setWsLogs([]);
+    toast({ title: 'Run Started', description: `Processing ${validFiles.length} file(s)...` });
 
-    // Connect to websocket
     connect();
+    await new Promise(r => setTimeout(r, 1000));
 
-    // Since we don't have a real backend, we'll simulate the websocket response after a delay
-    setTimeout(() => {
-        // Only simulate the end if we are still "starting" (meaning a real backend didn't already complete it)
-        setIsStarting(prev => {
-            if (prev) {
-                toast({ title: 'Run Completed (Simulated)', description: 'Simulated backend processing finished.' });
-                disconnect();
-                return false;
-            }
-            return prev;
-        });
-    }, 3000);
-
-    // In a real scenario, we'd send the config over WS:
-    // sendMessage({ type: 'start_run', config: data, files: files.map(f => f.name) });
+    sendMessage({
+      action: 'start_run',
+      config: data,
+      files: validFiles.map(f => f.name),
+    });
   };
 
   const commandPreview = `knf-run --charge ${config.charge || 0} --spin ${config.spin || 1} --mode ${config.processingMode || 'auto'} --backend ${config.nciBackend || 'torch'}${config.gpuEnabled ? ' --gpu' : ''}${config.forceRecomputation ? ' --force' : ''}${config.workers ? ` --workers ${config.workers}` : ''} --output "${config.outputDirectory || './output/'}"`;
@@ -208,9 +260,39 @@ const RunManager = () => {
             <FieldGroup label="NCI Backend">
               <Controller name="nciBackend" control={control} render={({field}) => <select {...field} className="w-full rounded-lg bg-input border border-border px-3 py-2 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none"><option value="torch">Torch</option><option value="multiwfn">Multiwfn</option></select>} />
             </FieldGroup>
-            <FieldGroup label="Output Directory" error={errors.outputDirectory?.message}>
-               <Controller name="outputDirectory" control={control} render={({field}) => <input type="text" {...field} className="w-full rounded-lg bg-input border border-border px-3 py-2 text-sm text-foreground font-mono focus:ring-1 focus:ring-ring outline-none" />} />
-            </FieldGroup>
+             <FieldGroup label="Output Directory" error={errors.outputDirectory?.message}>
+                <div className="flex gap-2">
+                  <Controller
+                    name="outputDirectory"
+                    control={control}
+                    render={({field}) => (
+                      <input
+                        type="text"
+                        {...field}
+                        className="w-full rounded-lg bg-input border border-border px-3 py-2 text-sm text-foreground font-mono focus:ring-1 focus:ring-ring outline-none"
+                      />
+                    )}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!window.electronAPI?.selectOutputDirectory) {
+                        toast({
+                          title: 'Folder picker unavailable',
+                          description: 'Open the desktop app (Electron) to choose an output directory.',
+                          variant: 'destructive',
+                        });
+                        return;
+                      }
+                      const chosen = await window.electronAPI.selectOutputDirectory();
+                      if (chosen) setValue('outputDirectory', chosen, { shouldDirty: true, shouldValidate: true });
+                    }}
+                    className="shrink-0 px-3 py-2 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    Browse
+                  </button>
+                </div>
+             </FieldGroup>
             {/* Toggles */}
             <div className="space-y-2.5">
               {(['gpuEnabled', 'forceRecomputation', 'cleanOutputs', 'debugMode', 'enableStopKey', 'interactiveQuadrant'] as const).map((key) => (
@@ -259,7 +341,7 @@ const RunManager = () => {
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
             >
               {isStarting ? (
-                <span className="animate-pulse-glow">Starting...</span>
+                <span className="animate-pulse-glow inline-flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Processing...</span>
               ) : (
                 <><Play className="w-4 h-4" /> Start Run ({validCount} files)</>
               )}
@@ -303,11 +385,11 @@ const RunManager = () => {
                       {isConnected ? "Connected" : "Disconnected"}
                   </span>
                 </div>
-                {messages.length > 0 && (
-                   <div className="mt-2 p-2 bg-muted rounded-md max-h-24 overflow-y-auto">
-                     {messages.map((msg, i) => (
-                         <div key={i} className="text-[10px] font-mono text-muted-foreground truncate">
-                            &gt; {typeof msg === 'string' ? msg : JSON.stringify(msg)}
+                {wsLogs.length > 0 && (
+                   <div className="mt-2 p-2 bg-muted rounded-md max-h-40 overflow-y-auto">
+                     {wsLogs.map((log, i) => (
+                         <div key={i} className="text-[10px] font-mono text-muted-foreground truncate leading-relaxed">
+                            {log}
                          </div>
                      ))}
                    </div>
