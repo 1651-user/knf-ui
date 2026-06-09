@@ -6,7 +6,7 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:8080 && tsc -p tsconfig.electron.json && node scripts/copy-preload.mjs && electron .\"",
-    "dev:backend": "python -m uvicorn server:app --app-dir ../nicforge-back/NCIForge --host 127.0.0.1 --port 8765 --reload",
+    "dev:backend": "py -3 -m uvicorn server:app --app-dir backend/NCIForge --host 127.0.0.1 --port 8765 --reload",
     "build": "vite build && tsc -p tsconfig.electron.json && node scripts/copy-preload.mjs",
     "build:dev": "vite build --mode development",
     "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:8080 && tsc -p tsconfig.electron.json && node scripts/copy-preload.mjs && electron .\"",
@@ -105,7 +105,7 @@
     ],
     "extraResources": [
       {
-        "from": "../nicforge-back/NCIForge",
+        "from": "backend/NCIForge",
         "to": "backend",
         "filter": [
           "**/*"

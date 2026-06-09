@@ -13,31 +13,32 @@ const isDev = !app.isPackaged;
 
 function getBackendDir(): string {
   if (isDev) {
-    return path.resolve(__dirname, '..', '..', 'nicforge-back', 'NCIForge');
+    return path.resolve(__dirname, '..', '..', 'backend', 'NCIForge');
   }
   return path.join(process.resourcesPath, 'backend');
 }
 
-function getPythonPath(): string {
-  const candidates = [
-    'python',
-    'python3',
-    path.join('C:\\ProgramData\\xtb\\xtb-6.7.1\\bin', 'python'),
+function getPythonCommand(): { command: string; args: string[] } {
+  const candidates: Array<{ command: string; args: string[]; probe: string }> = [
+    { command: 'py', args: ['-3'], probe: 'py -3' },
+    { command: 'python', args: [], probe: 'python' },
+    { command: 'python3', args: [], probe: 'python3' },
+    { command: path.join('C:\\ProgramData\\xtb\\xtb-6.7.1\\bin', 'python'), args: [], probe: 'bundled python' },
   ];
   for (const c of candidates) {
     try {
-      execSync(`${c} --version`, { stdio: 'ignore' });
-      return c;
+      execSync(`${c.probe} --version`, { stdio: 'ignore' });
+      return { command: c.command, args: c.args };
     } catch { }
   }
-  return 'python';
+  return { command: 'py', args: ['-3'] };
 }
 
 let backendProcess: ChildProcess | null = null;
 
 export async function startBackend(): Promise<void> {
   const backendDir = getBackendDir();
-  const python = getPythonPath();
+  const python = getPythonCommand();
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -49,7 +50,7 @@ export async function startBackend(): Promise<void> {
     ].join(';'),
   };
 
-  backendProcess = spawn(python, ['-m', 'uvicorn', 'server:app', '--host', '127.0.0.1', '--port', String(BACKEND_PORT)], {
+  backendProcess = spawn(python.command, [...python.args, '-m', 'uvicorn', 'server:app', '--host', '127.0.0.1', '--port', String(BACKEND_PORT)], {
     cwd: backendDir,
     env,
     stdio: ['ignore', 'pipe', 'pipe'],

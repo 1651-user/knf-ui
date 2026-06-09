@@ -7,15 +7,15 @@ npm install
 npm run dev
 ```
 
-That starts the Vite frontend, the Electron desktop shell, and the local backend.
-
-This repo expects the NCIForge backend to be available at `../nicforge-back/NCIForge` relative to the project root.
+That starts the Vite frontend, the Electron desktop shell, and the bundled local backend.
 
 ## Optional backend only
 
 ```sh
 npm run dev:backend
 ```
+
+If Python is not on PATH, the app will try the Windows `py -3` launcher first.
 
 ## Development
 
