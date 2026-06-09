@@ -1,36 +1,49 @@
 # KNF Studio
 
-## Run Locally
+## Fresh Windows Setup
+
+1. Open **PowerShell** or **Windows Terminal** and install Python + Node.js:
+
+```powershell
+winget install Python.Python.3.11
+winget install OpenJS.NodeJS.LTS
+```
+
+2. Open the project folder in **File Explorer**.
+
+3. In that folder, open **Command Prompt** or **PowerShell** and run:
+
+```bat
+install.bat
+```
+
+4. Start the app in the same folder:
 
 ```sh
-npm install
 npm run dev
 ```
 
-That starts the Vite frontend, the Electron desktop shell, and the bundled local backend.
+If `xtb` or `obabel` are missing, install them in **PowerShell**:
 
-## Optional backend only
-
-```sh
-npm run dev:backend
+```powershell
+winget install --id OpenBabel.OpenBabel -e
+winget install --id GrimmeLab.xTB -e
 ```
 
-If Python is not on PATH, the app will try the Windows `py -3` launcher first.
+Or with conda:
 
-## Development
-
-```sh
-npm install
-npm run dev
+```powershell
+conda install -c conda-forge xtb openbabel
 ```
 
-That starts the Vite frontend, the Electron desktop shell, and the local backend.
+If Python is not on `PATH`, the app tries `py -3` first.
 
-Optional backend only:
+## Troubleshooting
 
-```sh
-npm run dev:backend
-```
+- If `npm run dev` fails, make sure `install.bat` finished successfully.
+- If the backend does not start, check that Python is installed.
+- If calculations fail, install `xtb` and `obabel`.
+- If port `8765` is busy, close the other app using it and try again.
 
 ## Tech Stack
 
